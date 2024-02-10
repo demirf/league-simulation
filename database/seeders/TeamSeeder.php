@@ -14,10 +14,10 @@ class TeamSeeder extends Seeder
     public function run(): void
     {
         $teams = [
-            ['name' => 'Arsenal'],
-            ['name' => 'Chelsea'],
-            ['name' => 'Manchester City'],
-            ['name' => 'Liverpool'],
+            ['name' => 'Arsenal', 'logo_url' => 'https://upload.wikimedia.org/wikipedia/tr/9/92/Arsenal_Football_Club.png'],
+            ['name' => 'Chelsea', 'logo_url' => 'https://upload.wikimedia.org/wikipedia/hif/0/0d/Chelsea_FC.png'],
+            ['name' => 'Manchester City', 'logo_url' => 'https://upload.wikimedia.org/wikipedia/tr/f/f6/Manchester_City.png'],
+            ['name' => 'Liverpool', 'logo_url' => 'https://upload.wikimedia.org/wikipedia/tr/3/3f/150px-Liverpool_FC_logo.png'],
         ];
 
         Team::query()->insert($teams);
