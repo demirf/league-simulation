@@ -11,11 +11,14 @@ use Inertia\Inertia;
 class MatchesController extends Controller
 {
     protected MatchServiceInterface $service;
+
     public function __construct(MatchServiceInterface $service)
     {
         $this->service = $service;
     }
-    public function getAll(int $tournamentId) {
+
+    public function getAll(int $tournamentId)
+    {
         $result = $this->service->getAll($tournamentId);
 
         return Inertia::render('AllMatches', [
@@ -23,7 +26,8 @@ class MatchesController extends Controller
         ]);
     }
 
-    public function getByWeek(int $tournamentId, $week) {
+    public function getByWeek(int $tournamentId, $week)
+    {
         $matches = $this->service->allBy(['tournament_id' => $tournamentId, 'week' => $week]);
         $matchStandings = $this->service->getMatchStandings($tournamentId);
         $matchResources = [];
@@ -50,8 +54,16 @@ class MatchesController extends Controller
 
     public function play(int $tournamentId, $week)
     {
-        $this->service->play($tournamentId, $week);
+        $this->service->playWeek($tournamentId, $week);
 
         return redirect()->route('matches.getByWeek', ['tournamentId' => $tournamentId, 'week' => $week]);
+    }
+
+    public function playAll(int $tournamentId)
+    {
+        $this->service->playAll($tournamentId);
+        $lastWeek = 6;
+
+        return redirect()->route('matches.getByWeek', ['tournamentId' => $tournamentId, 'week' => $lastWeek]);
     }
 }

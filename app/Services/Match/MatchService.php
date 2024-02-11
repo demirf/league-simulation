@@ -52,81 +52,93 @@ class MatchService extends BaseService implements MatchServiceInterface
         return $matchStandings->toArray();
     }
 
-    public function play(int $tournamentId, int $week): bool
+    public function playAll(int $tournamentId): void
+    {
+        $matches = $this->repository->allBy(['tournament_id' => $tournamentId, 'status' => MatchStatus::Pending]);
+
+        foreach ($matches as $match) {
+            $this->play($match->id, $match->week);
+        }
+    }
+
+    public function playWeek(int $tournamentId, int $week): bool
     {
         $matches = $this->repository->allBy(['tournament_id' => $tournamentId, 'week' => $week, 'status' => MatchStatus::Pending]);
 
         foreach ($matches as $match) {
-            $defaultWinRate = 25;
-            $defaultLoseRate = 25;
-            $matchId = $match->id;
-            $homeTeamId = $match->home_team_id;
-            $awayTeamId = $match->away_team_id;
-
-            $firstTeamStats = $this->matchStandingService->allBy(['team_id' => $homeTeamId])->first();
-            $secondTeamStats = $this->matchStandingService->allBy(['team_id' => $awayTeamId])->first();
-
-            $firstTeamPower = $this->teamService->getTeamPower($firstTeamStats);
-            $secondTeamPower =  $this->teamService->getTeamPower($secondTeamStats);
-            $totalPower = $firstTeamPower + $secondTeamPower;
-
-            $normalizedFirstTeamPower = ($firstTeamPower * 100) / $totalPower;
-            $normalizedSecondTeamPower = ($secondTeamPower * 100) / $totalPower;
-
-            if ($normalizedFirstTeamPower > $normalizedSecondTeamPower) {
-                $powerDifference = (($normalizedFirstTeamPower - $normalizedSecondTeamPower) * 100 / $normalizedFirstTeamPower);
-            } else {
-                $powerDifference = (($normalizedSecondTeamPower - $normalizedFirstTeamPower) * 100 / $normalizedSecondTeamPower);
-            }
-
-            $rate = $powerDifference / 6;
-
-            $winRate = ($defaultWinRate + $rate * 3) / 500;
-            $loseRate = ($defaultLoseRate - $rate) / 500;
-
-            $homeGoal = 0;
-            $awayGoal = 0;
-
-            for ($i = 0; $i < 15; $i++) {
-                if ((float)rand() / (float)getrandmax() < $winRate) {
-                    $homeGoal++;
-                }
-                if ((float)rand() / (float)getrandmax() < $loseRate) {
-                    $awayGoal++;
-                }
-            }
-
-            $this->repository->update($matchId, [
-                'home_team_goals' => $homeGoal,
-                'away_team_goals' => $awayGoal,
-                'status' => MatchStatus::Complete,
-            ]);
-
-            $isWinnerTeamHome = $homeGoal > $awayGoal;
-            $isWinnerTeamAway = $awayGoal > $homeGoal;
-
-            $this->matchStandingService->update($firstTeamStats->id, [
-                'win' => $homeGoal > $awayGoal ? $firstTeamStats->win + 1 : $firstTeamStats->win,
-                'loss' => $homeGoal < $awayGoal ? $firstTeamStats->loss + 1 : $firstTeamStats->loss,
-                'draw' => $homeGoal === $awayGoal ? $firstTeamStats->draw + 1 : $firstTeamStats->draw,
-                'goals_for' => $firstTeamStats->goals_for + $homeGoal,
-                'points' => $isWinnerTeamHome ? $firstTeamStats->points + 3 : ($isWinnerTeamAway ? $firstTeamStats->points : $firstTeamStats->points + 1),
-                'goals_against' => $firstTeamStats->goals_against + $awayGoal,
-            ]);
-
-            $this->matchStandingService->update($secondTeamStats->id, [
-                'win' => $awayGoal > $homeGoal ? $secondTeamStats->win + 1 : $secondTeamStats->win,
-                'loss' => $awayGoal < $homeGoal  ? $secondTeamStats->loss + 1 : $secondTeamStats->loss,
-                'draw' => $homeGoal === $awayGoal ? $secondTeamStats->draw + 1 : $secondTeamStats->draw,
-                'goals_for' => $secondTeamStats->goals_for + $awayGoal,
-                'points' => $isWinnerTeamAway ? $secondTeamStats->points + 3 : ($isWinnerTeamHome ? $secondTeamStats->points : $secondTeamStats->points + 1),
-                'goals_against' => $secondTeamStats->goals_against + $homeGoal,
-            ]);
+            $this->play($match->id, $week);
         }
 
         return true;
     }
 
+    public function play($matchId, $week): void {
+        $defaultWinRate = 25;
+        $defaultLoseRate = 25;
+        $match = $this->repository->find($matchId);
+        $homeTeamId = $match->home_team_id;
+        $awayTeamId = $match->away_team_id;
+
+        $firstTeamStats = $this->matchStandingService->allBy(['team_id' => $homeTeamId])->first();
+        $secondTeamStats = $this->matchStandingService->allBy(['team_id' => $awayTeamId])->first();
+
+        $firstTeamPower = $this->teamService->getTeamPower($firstTeamStats);
+        $secondTeamPower = $this->teamService->getTeamPower($secondTeamStats);
+        $totalPower = $firstTeamPower + $secondTeamPower;
+
+        $normalizedFirstTeamPower = ($firstTeamPower * 100) / $totalPower;
+        $normalizedSecondTeamPower = ($secondTeamPower * 100) / $totalPower;
+
+        if ($normalizedFirstTeamPower > $normalizedSecondTeamPower) {
+            $powerDifference = (($normalizedFirstTeamPower - $normalizedSecondTeamPower) * 100 / $normalizedFirstTeamPower);
+        } else {
+            $powerDifference = (($normalizedSecondTeamPower - $normalizedFirstTeamPower) * 100 / $normalizedSecondTeamPower);
+        }
+
+        $rate = $powerDifference / 6;
+
+        $winRate = ($defaultWinRate + $rate * 3) / 500;
+        $loseRate = ($defaultLoseRate - $rate) / 500;
+
+        $homeGoal = 0;
+        $awayGoal = 0;
+
+        for ($i = 0; $i < 15; $i++) {
+            if ((float)rand() / (float)getrandmax() < $winRate) {
+                $homeGoal++;
+            }
+            if ((float)rand() / (float)getrandmax() < $loseRate) {
+                $awayGoal++;
+            }
+        }
+
+        $this->repository->update($matchId, [
+            'home_team_goals' => $homeGoal,
+            'away_team_goals' => $awayGoal,
+            'status' => MatchStatus::Complete,
+        ]);
+
+        $isWinnerTeamHome = $homeGoal > $awayGoal;
+        $isWinnerTeamAway = $awayGoal > $homeGoal;
+
+        $this->matchStandingService->update($firstTeamStats->id, [
+            'win' => $homeGoal > $awayGoal ? $firstTeamStats->win + 1 : $firstTeamStats->win,
+            'loss' => $homeGoal < $awayGoal ? $firstTeamStats->loss + 1 : $firstTeamStats->loss,
+            'draw' => $homeGoal === $awayGoal ? $firstTeamStats->draw + 1 : $firstTeamStats->draw,
+            'goals_for' => $firstTeamStats->goals_for + $homeGoal,
+            'points' => $isWinnerTeamHome ? $firstTeamStats->points + 3 : ($isWinnerTeamAway ? $firstTeamStats->points : $firstTeamStats->points + 1),
+            'goals_against' => $firstTeamStats->goals_against + $awayGoal,
+        ]);
+
+        $this->matchStandingService->update($secondTeamStats->id, [
+            'win' => $awayGoal > $homeGoal ? $secondTeamStats->win + 1 : $secondTeamStats->win,
+            'loss' => $awayGoal < $homeGoal ? $secondTeamStats->loss + 1 : $secondTeamStats->loss,
+            'draw' => $homeGoal === $awayGoal ? $secondTeamStats->draw + 1 : $secondTeamStats->draw,
+            'goals_for' => $secondTeamStats->goals_for + $awayGoal,
+            'points' => $isWinnerTeamAway ? $secondTeamStats->points + 3 : ($isWinnerTeamHome ? $secondTeamStats->points : $secondTeamStats->points + 1),
+            'goals_against' => $secondTeamStats->goals_against + $homeGoal,
+        ]);
+    }
     public function createMatches(int $tournamentId): array
     {
         $teams = $this->teamService->all();

@@ -21,4 +21,5 @@ Route::post('tournaments', [TournamentController::class, 'store'])->name('tourna
 Route::get('tournaments/{tournamentId}/matches', [MatchesController::class, 'getAll'])->name('matches.getAll');
 Route::get('tournaments/{tournamentId}/matches/{week}', [MatchesController::class, 'getByWeek'])->name('matches.getByWeek');
 Route::post('tournaments/{tournamentId}/matches/{week}/play', [MatchesController::class, 'play'])->name('matches.play');
+Route::post('tournaments/{tournamentId}/matches/playAll', [MatchesController::class, 'playAll'])->name('matches.playAll');
 

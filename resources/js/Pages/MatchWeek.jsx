@@ -7,21 +7,26 @@ import {MATCH_STATUS} from "../../constants/index.js";
 
 const MatchWeek = (props) => {
     const form = useForm();
+    const tournamentId = props.matches[0].tournament_id;
     const currentWeek = props.matches[0].week;
     const isCurrentWeekCompleted = props.matches.every(match => match.status === MATCH_STATUS.COMPLETE);
     const isTournamentCompleted = currentWeek === 6 && isCurrentWeekCompleted;
 
 
-    const handlePlayButton = () => {
+    const handlePlay = () => {
         if (isTournamentCompleted ){
             return form.get('/');
         }
 
         if (isCurrentWeekCompleted) {
-            return form.get(`/tournaments/${props.matches[0].tournament_id}/matches/${currentWeek + 1}`);
+            return form.get(`/tournaments/${tournamentId}/matches/${currentWeek + 1}`);
         }
 
-        form.post(`/tournaments/${props.matches[0].tournament_id}/matches/${currentWeek}/play`);
+        form.post(`/tournaments/${tournamentId}/matches/${currentWeek}/play`);
+    }
+
+    const handlePlayAll = () => {
+        form.post(`/tournaments/${tournamentId}/matches/playAll`);
     }
 
 
@@ -32,8 +37,11 @@ const MatchWeek = (props) => {
                     <MatchStandings matchStandings={props.matchStandings} />
                     <MatchCard matches={props.matches} />
                 </div>
-                <div className={"mt-10"}>
-                    <Button onClick={handlePlayButton}>
+                <div className={"mt-10 flex items-center gap-4  "}>
+                    <Button onClick={handlePlayAll}>
+                        Play All
+                    </Button>
+                    <Button onClick={handlePlay}>
                         {isTournamentCompleted ? 'Done' :isCurrentWeekCompleted ? 'Next Week' : 'Play'}
                     </Button>
                 </div>
