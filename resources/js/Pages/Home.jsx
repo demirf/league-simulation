@@ -1,12 +1,12 @@
 import React from "react";
 import Layout from "../Components/Layout.jsx";
 import {Button} from "../Components/Button.jsx";
-import {router} from "@inertiajs/react";
+import {useForm} from "@inertiajs/inertia-react";
 
 const Home = ({ teams }) => {
-
+    const form = useForm();
     const handleStartTournament = () => {
-        router.post('tournaments')
+        form.post('/tournaments');
     }
 
     return (

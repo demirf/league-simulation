@@ -5,9 +5,23 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreMatchesRequest;
 use App\Http\Requests\UpdateMatchesRequest;
 use App\Models\Matches;
+use App\Services\Match\MatchServiceInterface;
+use Inertia\Inertia;
 
 class MatchesController extends Controller
 {
+    protected MatchServiceInterface $service;
+    public function __construct(MatchServiceInterface $service)
+    {
+        $this->service = $service;
+    }
+    public function getAll(int $tournamentId) {
+        $result = $this->service->getAll($tournamentId);
+
+        return Inertia::render('AllMatches', [
+            'allMatches' => $result
+        ]);
+    }
     /**
      * Display a listing of the resource.
      */

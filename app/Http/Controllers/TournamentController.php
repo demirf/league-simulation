@@ -6,6 +6,7 @@ use App\Http\Requests\StoreTournamentRequest;
 use App\Http\Requests\UpdateTournamentRequest;
 use App\Models\Tournament;
 use App\Services\Tournament\TournamentServiceInterface;
+use Inertia\Inertia;
 
 class TournamentController extends Controller
 {
@@ -35,7 +36,11 @@ class TournamentController extends Controller
      */
     public function store(StoreTournamentRequest $request)
     {
-        $this->service->create([]);
+        $result = $this->service->create([]);
+
+//        return Inertia::render('AllMatches');
+
+        return redirect()->route('matches.getAll', ['tournamentId' => $result->id]);
     }
 
     /**

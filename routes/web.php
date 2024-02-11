@@ -2,8 +2,8 @@
 
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TournamentController;
+use App\Http\Controllers\MatchesController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,5 +18,6 @@ use Inertia\Inertia;
 
 Route::get('/', [TeamController::class, 'index'])->name('home');
 Route::post('tournaments', [TournamentController::class, 'store'])->name('tournaments.store');
+Route::get('tournaments/{tournamentId}/matches', [MatchesController::class, 'getAll'])->name('matches.getAll');
 
 
