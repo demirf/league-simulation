@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\TournamentController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -16,4 +17,6 @@ use Inertia\Inertia;
 */
 
 Route::get('/', [TeamController::class, 'index'])->name('home');
+Route::post('tournaments', [TournamentController::class, 'store'])->name('tournaments.store');
+
 

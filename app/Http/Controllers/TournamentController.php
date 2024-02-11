@@ -5,9 +5,15 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreTournamentRequest;
 use App\Http\Requests\UpdateTournamentRequest;
 use App\Models\Tournament;
+use App\Services\Tournament\TournamentServiceInterface;
 
 class TournamentController extends Controller
 {
+    protected TournamentServiceInterface $service;
+
+    public function __construct(TournamentServiceInterface $service) {
+        $this->service = $service;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -29,7 +35,7 @@ class TournamentController extends Controller
      */
     public function store(StoreTournamentRequest $request)
     {
-        //
+        $this->service->create([]);
     }
 
     /**

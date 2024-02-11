@@ -16,6 +16,7 @@ class Matches extends Model
         'home_team_goals',
         'away_team_goals',
         'week',
+        'status',
         'tournament_id',
         'is_match_played'
     ];

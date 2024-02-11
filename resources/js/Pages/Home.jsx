@@ -1,8 +1,14 @@
 import React from "react";
 import Layout from "../Components/Layout.jsx";
 import {Button} from "../Components/Button.jsx";
+import {router} from "@inertiajs/react";
 
 const Home = ({ teams }) => {
+
+    const handleStartTournament = () => {
+        router.post('tournaments')
+    }
+
     return (
         <>
             <Layout>
@@ -17,7 +23,7 @@ const Home = ({ teams }) => {
                     </div>)}
                 </div>
                 <div className={"text-center mt-4"}>
-                    <Button>Start Tournament</Button>
+                    <Button onClick={handleStartTournament}>Start Tournament</Button>
                 </div>
             </Layout>
         </>
