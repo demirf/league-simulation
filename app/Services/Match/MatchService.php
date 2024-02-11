@@ -232,6 +232,8 @@ class MatchService extends BaseService implements MatchServiceInterface
             $teamPoints[$standing['team_id']] = $standing['points'];
         }
 
+        $teamWins = array_combine(array_keys($teamPoints), array_fill(0, count($teamPoints), 1));
+
         $calculatedPoints = [];
         $probabilities = Matches::PROBABILITIES;
 
@@ -246,8 +248,6 @@ class MatchService extends BaseService implements MatchServiceInterface
                 }
             }
         }
-
-        $teamWins = array_combine(array_keys($teamPoints), array_fill(0, count($teamPoints), 0));
 
         foreach ($calculatedPoints ? Arr::flatten($calculatedPoints, 2) : [$teamPoints] as $item) {
             foreach (array_keys($item, max($item)) as $key) {
@@ -272,18 +272,20 @@ class MatchService extends BaseService implements MatchServiceInterface
     {
         $checkerPossibility = $index ? $secondMatchProbability : $firstMatchProbability;
 
-        foreach ($matches as $match) {
-            if ($match->week == $computedWeek) {
-                $homeTeamId = $match->home_team_id;
-                $awayTeamId = $match->away_team_id;
-                if ($checkerPossibility === Matches::WIN) {
-                    $calculatedPoints[$computedWeek][$firstMatchProbability][$secondMatchProbability][$homeTeamId] += 3;
-                } elseif ($checkerPossibility === Matches::DRAW) {
-                    $calculatedPoints[$computedWeek][$firstMatchProbability][$secondMatchProbability][$homeTeamId] += 1;
-                    $calculatedPoints[$computedWeek][$firstMatchProbability][$secondMatchProbability][$awayTeamId] += 1;
-                } else {
-                    $calculatedPoints[$computedWeek][$firstMatchProbability][$secondMatchProbability][$awayTeamId] += 3;
-                }
+        $filteredMatches = $matches->filter(function ($match) use ($computedWeek) {
+            return $match->week == $computedWeek;
+        });
+
+        foreach ($filteredMatches as $match) {
+            $homeTeamId = $match->home_team_id;
+            $awayTeamId = $match->away_team_id;
+            if ($checkerPossibility === Matches::WIN) {
+                $calculatedPoints[$computedWeek][$firstMatchProbability][$secondMatchProbability][$homeTeamId] += 3;
+            } elseif ($checkerPossibility === Matches::DRAW) {
+                $calculatedPoints[$computedWeek][$firstMatchProbability][$secondMatchProbability][$homeTeamId] += 1;
+                $calculatedPoints[$computedWeek][$firstMatchProbability][$secondMatchProbability][$awayTeamId] += 1;
+            } else {
+                $calculatedPoints[$computedWeek][$firstMatchProbability][$secondMatchProbability][$awayTeamId] += 3;
             }
         }
     }
