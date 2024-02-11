@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreMatchesRequest;
-use App\Http\Requests\UpdateMatchesRequest;
 use App\Models\Matches;
 use App\Services\Match\MatchServiceInterface;
 use Inertia\Inertia;
@@ -30,6 +28,8 @@ class MatchesController extends Controller
     {
         $matches = $this->service->allBy(['tournament_id' => $tournamentId, 'week' => $week]);
         $matchStandings = $this->service->getMatchStandings($tournamentId);
+        $isComplete = $matches->first()->status === Matches::COMPLETE;
+        $estimations = $this->service->getEstimations($tournamentId, $isComplete ? $week + 1 : $week);
         $matchResources = [];
 
         foreach ($matches as $match) {
@@ -49,6 +49,7 @@ class MatchesController extends Controller
         return Inertia::render('MatchWeek', [
             'matches' => $matchResources,
             'matchStandings' => $matchStandings,
+            'estimations' => $estimations
         ]);
     }
 

@@ -21,6 +21,15 @@ class Matches extends Model
         'is_match_played'
     ];
 
+    public const WIN = 'win';
+    public const DRAW = 'draw';
+    public const LOSS = 'loss';
+
+    public const PROBABILITIES = [self::WIN, self::DRAW, self::LOSS];
+
+    public const PENDING = 'pending';
+    public const COMPLETE = 'complete';
+
     public function tournament(): BelongsTo {
         return $this->belongsTo(Tournament::class, 'tournament_id');
     }

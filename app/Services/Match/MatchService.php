@@ -2,11 +2,12 @@
 
 namespace App\Services\Match;
 
-use App\Enums\MatchStatus;
+use App\Models\Matches;
 use App\Repositories\Match\MatchRepositoryInterface;
 use App\Services\BaseService;
 use App\Services\MatchStanding\MatchStandingServiceInterface;
 use App\Services\Team\TeamServiceInterface;
+use Illuminate\Support\Arr;
 
 class MatchService extends BaseService implements MatchServiceInterface
 {
@@ -54,7 +55,7 @@ class MatchService extends BaseService implements MatchServiceInterface
 
     public function playAll(int $tournamentId): void
     {
-        $matches = $this->repository->allBy(['tournament_id' => $tournamentId, 'status' => MatchStatus::Pending]);
+        $matches = $this->repository->allBy(['tournament_id' => $tournamentId, 'status' => Matches::PENDING]);
 
         foreach ($matches as $match) {
             $this->play($match->id, $match->week);
@@ -63,7 +64,7 @@ class MatchService extends BaseService implements MatchServiceInterface
 
     public function playWeek(int $tournamentId, int $week): bool
     {
-        $matches = $this->repository->allBy(['tournament_id' => $tournamentId, 'week' => $week, 'status' => MatchStatus::Pending]);
+        $matches = $this->repository->allBy(['tournament_id' => $tournamentId, 'week' => $week, 'status' => Matches::PENDING]);
 
         foreach ($matches as $match) {
             $this->play($match->id, $week);
@@ -78,9 +79,10 @@ class MatchService extends BaseService implements MatchServiceInterface
         $match = $this->repository->find($matchId);
         $homeTeamId = $match->home_team_id;
         $awayTeamId = $match->away_team_id;
+        $tournamentId = $match->tournament_id;
 
-        $firstTeamStats = $this->matchStandingService->allBy(['team_id' => $homeTeamId])->first();
-        $secondTeamStats = $this->matchStandingService->allBy(['team_id' => $awayTeamId])->first();
+        $firstTeamStats = $this->matchStandingService->allBy(['team_id' => $homeTeamId, 'tournament_id' => $tournamentId])->first();
+        $secondTeamStats = $this->matchStandingService->allBy(['team_id' => $awayTeamId, 'tournament_id' => $tournamentId])->first();
 
         $firstTeamPower = $this->teamService->getTeamPower($firstTeamStats);
         $secondTeamPower = $this->teamService->getTeamPower($secondTeamStats);
@@ -95,10 +97,8 @@ class MatchService extends BaseService implements MatchServiceInterface
             $powerDifference = (($normalizedSecondTeamPower - $normalizedFirstTeamPower) * 100 / $normalizedSecondTeamPower);
         }
 
-        $rate = $powerDifference / 6;
-
-        $winRate = ($defaultWinRate + $rate * 3) / 500;
-        $loseRate = ($defaultLoseRate - $rate) / 500;
+        $winRate = ($defaultWinRate + $powerDifference * 3) / 250;
+        $loseRate = ($defaultLoseRate - $powerDifference) / 250;
 
         $homeGoal = 0;
         $awayGoal = 0;
@@ -115,7 +115,7 @@ class MatchService extends BaseService implements MatchServiceInterface
         $this->repository->update($matchId, [
             'home_team_goals' => $homeGoal,
             'away_team_goals' => $awayGoal,
-            'status' => MatchStatus::Complete,
+            'status' => Matches::COMPLETE,
         ]);
 
         $isWinnerTeamHome = $homeGoal > $awayGoal;
@@ -178,10 +178,8 @@ class MatchService extends BaseService implements MatchServiceInterface
                 $awayTeam = $isEvenRound ? $team2 : $team1;
 
                 $this->createMatch($homeTeam, $awayTeam, $round, $tournamentId);
-
                 $schedule[$round][] = [$homeTeam, $awayTeam];
             }
-
 
             $this->rotateTeams($teams);
         }
@@ -195,7 +193,7 @@ class MatchService extends BaseService implements MatchServiceInterface
             'home_team_id' => $homeTeam['id'],
             'away_team_id' => $awayTeam['id'],
             'week' => $round,
-            'status' => MatchStatus::Pending,
+            'status' => Matches::PENDING,
             'tournament_id' => $tournamentId
         ]);
     }
@@ -222,5 +220,71 @@ class MatchService extends BaseService implements MatchServiceInterface
 
         $items[1] = $bottomLeftItem;
         $items[$lastIndex] = $topRightItem;
+    }
+
+    public function getEstimations(int $tournamentId, $week): array
+    {
+        $matches = $this->repository->allBy(['tournament_id' => $tournamentId]);
+        $standings = $this->matchStandingService->allBy(['tournament_id' => $tournamentId]);
+
+        $teamPoints = [];
+        foreach ($standings as $standing) {
+            $teamPoints[$standing['team_id']] = $standing['points'];
+        }
+
+        $calculatedPoints = [];
+        $probabilities = Matches::PROBABILITIES;
+
+        for ($computedWeek = $week; $computedWeek < self::$TOTAL_ROUND; $computedWeek++) {
+            foreach ($probabilities as $firstMatchProbability) {
+                foreach ($probabilities as $secondMatchProbability) {
+                    if (empty($calculatedPoints[$computedWeek][$firstMatchProbability][$secondMatchProbability])) {
+                        $calculatedPoints[$computedWeek][$firstMatchProbability][$secondMatchProbability] = $teamPoints;
+                    }
+                    $this->updateCalculatePoints($calculatedPoints, $matches, $computedWeek, $firstMatchProbability, $secondMatchProbability, 0);
+                    $this->updateCalculatePoints($calculatedPoints, $matches, $computedWeek, $firstMatchProbability, $secondMatchProbability, 1);
+                }
+            }
+        }
+
+        $teamWins = array_combine(array_keys($teamPoints), array_fill(0, count($teamPoints), 0));
+
+        foreach ($calculatedPoints ? Arr::flatten($calculatedPoints, 2) : [$teamPoints] as $item) {
+            foreach (array_keys($item, max($item)) as $key) {
+                $teamWins[$key] += 1;
+            }
+        }
+
+        $totalCount = array_sum($teamWins);
+
+        return array_map(function ($teamId, $winCount) use ($totalCount, $standings) {
+            $team = collect($standings)->where('team_id', $teamId)->first();
+            $teamName = $team['team_name'];
+
+            return [
+                'name' => $teamName,
+                'percent' => $totalCount ? $winCount * 100 / $totalCount : 0
+            ];
+        }, array_keys($teamWins), $teamWins);
+    }
+
+    private function updateCalculatePoints(&$calculatedPoints, $matches, $computedWeek, $firstMatchProbability, $secondMatchProbability, $index)
+    {
+        $checkerPossibility = $index ? $secondMatchProbability : $firstMatchProbability;
+
+        foreach ($matches as $match) {
+            if ($match->week == $computedWeek) {
+                $homeTeamId = $match->home_team_id;
+                $awayTeamId = $match->away_team_id;
+                if ($checkerPossibility === Matches::WIN) {
+                    $calculatedPoints[$computedWeek][$firstMatchProbability][$secondMatchProbability][$homeTeamId] += 3;
+                } elseif ($checkerPossibility === Matches::DRAW) {
+                    $calculatedPoints[$computedWeek][$firstMatchProbability][$secondMatchProbability][$homeTeamId] += 1;
+                    $calculatedPoints[$computedWeek][$firstMatchProbability][$secondMatchProbability][$awayTeamId] += 1;
+                } else {
+                    $calculatedPoints[$computedWeek][$firstMatchProbability][$secondMatchProbability][$awayTeamId] += 3;
+                }
+            }
+        }
     }
 }

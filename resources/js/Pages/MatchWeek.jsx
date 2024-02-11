@@ -4,6 +4,7 @@ import MatchCard from "../Components/MatchCard.jsx";
 import {Button} from "../Components/Button.jsx";
 import {useForm} from "@inertiajs/inertia-react";
 import {MATCH_STATUS} from "../../constants/index.js";
+import Estimations from "../Components/Estimations.jsx";
 
 const MatchWeek = (props) => {
     const form = useForm();
@@ -14,7 +15,7 @@ const MatchWeek = (props) => {
 
 
     const handlePlay = () => {
-        if (isTournamentCompleted ){
+        if (isTournamentCompleted) {
             return form.get('/');
         }
 
@@ -29,21 +30,31 @@ const MatchWeek = (props) => {
         form.post(`/tournaments/${tournamentId}/matches/playAll`);
     }
 
+    const handleReset = () => {
+        form.get('/');
+    }
 
     return (
         <Layout>
             <div className="flex md:mx-auto flex-col max-w-7xl justify-center">
                 <div className="flex flex-col lg:flex-row gap-5 items-start">
-                    <MatchStandings matchStandings={props.matchStandings} />
-                    <MatchCard matches={props.matches} />
+                    <MatchStandings matchStandings={props.matchStandings}/>
+                    <MatchCard matches={props.matches}/>
+                    <Estimations estimations={props.estimations}/>
                 </div>
-                <div className={"mt-10 flex items-center gap-4  "}>
+                <div className={"mt-10 flex items-center justify-between gap-4"}>
                     <Button onClick={handlePlayAll}>
                         Play All
                     </Button>
-                    <Button onClick={handlePlay}>
-                        {isTournamentCompleted ? 'Done' :isCurrentWeekCompleted ? 'Next Week' : 'Play'}
-                    </Button>
+                    <div className={"flex items-center gap-4"}>
+                        <Button onClick={handleReset}>
+                            Reset
+                        </Button>
+                        <Button onClick={handlePlay}>
+                            {isTournamentCompleted ? 'Done' : isCurrentWeekCompleted ? 'Next Week' : 'Play'}
+                        </Button>
+                    </div>
+
                 </div>
             </div>
         </Layout>

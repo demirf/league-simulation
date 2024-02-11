@@ -3,7 +3,7 @@ import {MATCH_STATUS} from "../../constants/index.js";
 
 const MatchCard = ({matches}) => {
     return (
-        <div className={"flex flex-col items-start gap-4 border border-gray-100 rounded-lg relative max-w-[400px] w-full"}>
+        <div className={"flex flex-col items-start gap-4 border border-gray-100 rounded-lg relative max-w-[400px] w-full shadow"}>
             <div className={"bg-gray-800 w-full p-4 rounded-lg rounded-bl-none rounded-br-none"}>
                 <span className={"text-white text-lg font-medium"}>Week {matches[0].week}</span>
             </div>
