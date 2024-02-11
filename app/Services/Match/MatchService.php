@@ -5,23 +5,41 @@ namespace App\Services\Match;
 use App\Enums\MatchStatus;
 use App\Repositories\Match\MatchRepositoryInterface;
 use App\Services\BaseService;
+use App\Services\MatchStanding\MatchStandingServiceInterface;
 use App\Services\Team\TeamServiceInterface;
 
 class MatchService extends BaseService implements MatchServiceInterface
 {
     protected TeamServiceInterface $teamService;
-    public function __construct(MatchRepositoryInterface $repository, TeamServiceInterface $teamService)
+    protected MatchStandingServiceInterface $matchStandingService;
+    public function __construct(MatchRepositoryInterface $repository, TeamServiceInterface $teamService, MatchStandingServiceInterface $matchStandingService)
     {
         parent::__construct($repository);
         $this->repository = $repository;
         $this->teamService = $teamService;
+        $this->matchStandingService = $matchStandingService;
     }
 
     public function createMatches($tournamentId): array
     {
         $teams = $this->teamService->all();
+        $fixture = $this->createFixture($teams->toArray(), $tournamentId);
 
-        return $this->createFixture($teams->toArray(), $tournamentId);
+        foreach ($teams as $team) {
+            $this->matchStandingService->create([
+                'team_id' => $team->id,
+                'tournament_id' => $tournamentId,
+                'team_name' => $team->name,
+                'points' => 0,
+                'goals_for' => 0,
+                'goals_against' => 0,
+                'win' => 0,
+                'draw' => 0,
+                'loss' => 0,
+            ]);
+        }
+
+        return $fixture;
     }
 
     private function createFixture(array $teams, int $tournamentId): array
