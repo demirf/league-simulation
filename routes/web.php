@@ -19,5 +19,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [TeamController::class, 'index'])->name('home');
 Route::post('tournaments', [TournamentController::class, 'store'])->name('tournaments.store');
 Route::get('tournaments/{tournamentId}/matches', [MatchesController::class, 'getAll'])->name('matches.getAll');
-
+Route::get('tournaments/{tournamentId}/matches/{week}', [MatchesController::class, 'getByWeek'])->name('matches.getByWeek');
+Route::post('tournaments/{tournamentId}/matches/{week}/play', [MatchesController::class, 'play'])->name('matches.play');
 

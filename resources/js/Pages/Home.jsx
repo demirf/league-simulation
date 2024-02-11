@@ -5,6 +5,7 @@ import {useForm} from "@inertiajs/inertia-react";
 
 const Home = ({ teams }) => {
     const form = useForm();
+
     const handleStartTournament = () => {
         form.post('/tournaments');
     }

@@ -11,4 +11,8 @@ class MatchStandingService extends BaseService implements MatchStandingServiceIn
         parent::__construct($repository);
         $this->repository = $repository;
     }
+
+    public function update($id, $data) {
+        return $this->repository->update($id, $data);
+    }
 }
