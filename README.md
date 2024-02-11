@@ -3,6 +3,22 @@
 
 https://github.com/demirf/league-simulation/assets/42120878/c1ec41af-9ddd-4875-b441-99aea7201595
 
+Before starting the project after cloning, you should follow these steps:
+
+Run Composer to install dependencies:
+```composer install```
+
+Run database migrations to create database tables:
+```php artisan migrate```
+
+Seed the database with sample data:
+```php artisan db:seed```
+
+Install npm packages:
+```npm install```
+
+Run the client side
+```npm run dev```
 
 
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
